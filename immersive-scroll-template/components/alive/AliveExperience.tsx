@@ -117,12 +117,12 @@ export function AliveExperience() {
 
               <div className="relative z-20 self-end pb-[8svh] text-right">
                 <div className="overflow-hidden"><p data-alive-word className="font-display text-[clamp(5rem,11vw,11rem)] italic leading-[0.73] tracking-[-0.08em]">you move.</p></div>
-                <p data-alive-meta className="ml-auto mt-7 max-w-[26ch] text-sm leading-relaxed text-white/45">Move the cursor. Click the portrait. Or let your head become the controller.</p>
+                <p data-alive-meta className="ml-auto mt-7 max-w-[26ch] text-sm leading-relaxed text-white/45">Move the cursor. Activate the signal. Or let your head become the controller.</p>
                 <div className="mt-6 flex justify-end"><WebcamController onLook={setFaceLook} /></div>
               </div>
             </div>
             <div className="absolute bottom-7 left-5 right-5 flex justify-between border-t border-white/15 pt-4 text-[9px] uppercase tracking-[0.22em] text-white/35 md:left-10 md:right-10">
-              <span>02D portrait mode</span><span>Click / blink</span><span>Scroll / descend</span>
+              <span>Synthetic gaze mode</span><span>Click / blink</span><span>Scroll / descend</span>
             </div>
           </section>
 
@@ -134,7 +134,7 @@ export function AliveExperience() {
                 <p className="absolute bottom-8 left-6 max-w-[15ch] font-display text-[clamp(3rem,7vw,7rem)] leading-[0.82] tracking-[-0.06em] text-white md:left-10">The surface remembers.</p>
               </div>
               <div ref={zoomFrame} className="relative z-10 overflow-hidden bg-black will-change-[width,height,transform]">
-                <Image src="/images/demo-face.png" alt="Retrato de demostración ampliándose con el scroll" fill sizes="100vw" className="object-cover" />
+                <InteractiveFace2D sensitivity={0.45} embedded />
               </div>
               <p className="absolute left-5 top-24 z-20 text-[10px] uppercase tracking-[0.25em] md:left-10">02 / Cross the image</p>
             </div>

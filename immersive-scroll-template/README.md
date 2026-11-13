@@ -5,7 +5,7 @@ Dos demos creativas en una aplicación Next.js + TypeScript preparada para Sites
 ## Rutas
 
 - `/` — experiencia cinematográfica controlada por scroll.
-- `/alive` — interacción humana, retrato 2D, WebGL y modo cámara opcional.
+- `/alive` — señal sintética 2D, personaje WebGL y modo cámara opcional.
 - `/playground` — índice de doce efectos reutilizables.
 - `/playground/[effect]` — banco de pruebas configurable de cada efecto.
 
@@ -28,4 +28,4 @@ El modo de seguimiento facial es opcional, solicita consentimiento explícito y 
 
 ## Imágenes
 
-Las escenas editoriales utilizan fotografías descargadas de Unsplash bajo su licencia. El retrato de demostración fue generado expresamente para este prototipo y puede sustituirse en `public/images/demo-face.png`. Los puntos de ojos se configuran en `components/alive/InteractiveFace2D.tsx`.
+Las escenas editoriales utilizan fotografías descargadas de Unsplash bajo su licencia. La mirada principal es una máscara sintética creada íntegramente con HTML y CSS en `components/alive/InteractiveFace2D.tsx`: no utiliza ni imita a una persona real.

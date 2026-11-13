@@ -1,5 +1,5 @@
 export const effects = [
-  { slug: "gaze-2d", number: "01", title: "2D gaze", type: "Face", description: "Configurable eye anchors and restrained portrait parallax." },
+  { slug: "gaze-2d", number: "01", title: "Synthetic gaze", type: "Signal", description: "A non-human graphic mask with reactive eyes, blink and parallax." },
   { slug: "head-3d", number: "02", title: "3D head", type: "WebGL", description: "Procedural head rig with cursor-directed rotation." },
   { slug: "avatar-3d", number: "03", title: "3D avatar", type: "WebGL", description: "Idle motion, blink, click reaction and real lighting." },
   { slug: "face-tracking", number: "04", title: "Face tracking", type: "Vision", description: "Optional local head-position control with explicit consent." },

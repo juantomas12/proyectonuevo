@@ -5,7 +5,9 @@ import { Float, MeshDistortMaterial } from "@react-three/drei";
 import * as THREE from "three";
 import { Suspense, useMemo, useRef, useState } from "react";
 
-function LiquidBackdrop() {
+export type SceneVariant = "avatar" | "head" | "particles" | "liquid";
+
+function LiquidBackdrop({ speed, intensity, smoothing }: { speed: number; intensity: number; smoothing: number }) {
   const material = useRef<THREE.ShaderMaterial>(null);
   const { pointer } = useThree();
   const uniforms = useMemo(
@@ -14,14 +16,16 @@ function LiquidBackdrop() {
       uMouse: { value: new THREE.Vector2() },
       uColorA: { value: new THREE.Color("#071014") },
       uColorB: { value: new THREE.Color("#0c5a66") },
+      uIntensity: { value: intensity },
     }),
     [],
   );
 
   useFrame(({ clock }) => {
     if (!material.current) return;
-    material.current.uniforms.uTime.value = clock.elapsedTime;
-    material.current.uniforms.uMouse.value.lerp(pointer, 0.06);
+    material.current.uniforms.uTime.value = clock.elapsedTime * speed;
+    material.current.uniforms.uIntensity.value = intensity;
+    material.current.uniforms.uMouse.value.lerp(pointer, Math.max(0.025, 0.16 * (1.05 - smoothing)));
   });
 
   return (
@@ -48,11 +52,12 @@ function LiquidBackdrop() {
           uniform vec2 uMouse;
           uniform vec3 uColorA;
           uniform vec3 uColorB;
+          uniform float uIntensity;
           void main() {
             float wave = sin(vUv.x * 9. + uTime * .7) * cos(vUv.y * 7. - uTime * .5);
             float glow = .16 / max(.05, distance(vUv, uMouse * .25 + .5));
             vec3 color = mix(uColorA, uColorB, smoothstep(-.8, .9, wave + vUv.y));
-            color += vec3(.05, .48, .55) * glow * .2;
+            color += vec3(.05, .48, .55) * glow * .2 * uIntensity;
             gl_FragColor = vec4(color, 1.0);
           }
         `}
@@ -61,7 +66,7 @@ function LiquidBackdrop() {
   );
 }
 
-function ParticleField() {
+function ParticleField({ speed, intensity }: { speed: number; intensity: number }) {
   const points = useRef<THREE.Points>(null);
   const positions = useMemo(() => {
     const values = new Float32Array(420 * 3);
@@ -75,8 +80,8 @@ function ParticleField() {
 
   useFrame(({ pointer, clock }) => {
     if (!points.current) return;
-    points.current.rotation.y = clock.elapsedTime * 0.025 + pointer.x * 0.08;
-    points.current.rotation.x = pointer.y * 0.05;
+    points.current.rotation.y = clock.elapsedTime * 0.025 * speed + pointer.x * 0.12 * intensity;
+    points.current.rotation.x = pointer.y * 0.08 * intensity;
   });
 
   return (
@@ -84,12 +89,12 @@ function ParticleField() {
       <bufferGeometry>
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
-      <pointsMaterial color="#9beef5" size={0.018} sizeAttenuation transparent opacity={0.62} />
+      <pointsMaterial color="#9beef5" size={0.012 + intensity * 0.012} sizeAttenuation transparent opacity={Math.min(0.9, 0.38 + intensity * 0.24)} />
     </points>
   );
 }
 
-function ReactiveAvatar({ externalLook }: { externalLook?: { x: number; y: number } | null }) {
+function ReactiveAvatar({ externalLook, speed, sensitivity, smoothing, headOnly }: { externalLook?: { x: number; y: number } | null; speed: number; sensitivity: number; smoothing: number; headOnly?: boolean }) {
   const group = useRef<THREE.Group>(null);
   const leftEye = useRef<THREE.Group>(null);
   const rightEye = useRef<THREE.Group>(null);
@@ -99,15 +104,16 @@ function ReactiveAvatar({ externalLook }: { externalLook?: { x: number; y: numbe
     if (!group.current) return;
     const x = externalLook?.x ?? pointer.x;
     const y = externalLook?.y ?? pointer.y;
-    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, x * 0.42, 4, delta);
-    group.current.rotation.x = THREE.MathUtils.damp(group.current.rotation.x, -y * 0.2, 4, delta);
-    const eyeX = THREE.MathUtils.clamp(x * 0.16, -0.13, 0.13);
-    const eyeY = THREE.MathUtils.clamp(-y * 0.12, -0.1, 0.1);
+    const damp = 2.4 + (1 - smoothing) * 7;
+    group.current.rotation.y = THREE.MathUtils.damp(group.current.rotation.y, x * 0.42 * sensitivity, damp, delta);
+    group.current.rotation.x = THREE.MathUtils.damp(group.current.rotation.x, -y * 0.2 * sensitivity, damp, delta);
+    const eyeX = THREE.MathUtils.clamp(x * 0.16 * sensitivity, -0.16, 0.16);
+    const eyeY = THREE.MathUtils.clamp(-y * 0.12 * sensitivity, -0.13, 0.13);
     [leftEye.current, rightEye.current].forEach((eye) => {
       if (!eye) return;
       eye.rotation.y = THREE.MathUtils.damp(eye.rotation.y, eyeX, 8, delta);
       eye.rotation.x = THREE.MathUtils.damp(eye.rotation.x, eyeY, 8, delta);
-      const blink = Math.sin(clock.elapsedTime * 0.72) > 0.998 ? 0.12 : 1;
+      const blink = Math.sin(clock.elapsedTime * 0.72 * speed) > 0.998 ? 0.12 : 1;
       eye.scale.y = THREE.MathUtils.damp(eye.scale.y, blink, 20, delta);
     });
     const targetScale = excited ? 1.12 : 1;
@@ -115,7 +121,7 @@ function ReactiveAvatar({ externalLook }: { externalLook?: { x: number; y: numbe
   });
 
   return (
-    <Float speed={1.4} rotationIntensity={0.08} floatIntensity={0.28}>
+    <Float speed={1.4 * speed} rotationIntensity={0.08} floatIntensity={0.28}>
       <group
         ref={group}
         position={[0, -0.12, 0]}
@@ -148,11 +154,30 @@ function ReactiveAvatar({ externalLook }: { externalLook?: { x: number; y: numbe
           <torusGeometry args={[0.28, 0.025, 12, 64, Math.PI]} />
           <meshStandardMaterial color="#202727" />
         </mesh>
-        <mesh position={[0, -1.35, -0.05]} scale={[1.5, 0.45, 0.75]}>
-          <sphereGeometry args={[1, 48, 48]} />
-          <meshStandardMaterial color="#15191a" roughness={0.34} metalness={0.7} />
-        </mesh>
+        {!headOnly && (
+          <mesh position={[0, -1.35, -0.05]} scale={[1.5, 0.45, 0.75]}>
+            <sphereGeometry args={[1, 48, 48]} />
+            <meshStandardMaterial color="#15191a" roughness={0.34} metalness={0.7} />
+          </mesh>
+        )}
       </group>
+    </Float>
+  );
+}
+
+function ReactiveOrb({ speed, intensity }: { speed: number; intensity: number }) {
+  const orb = useRef<THREE.Mesh>(null);
+  useFrame(({ pointer, clock }) => {
+    if (!orb.current) return;
+    orb.current.rotation.x = clock.elapsedTime * 0.18 * speed + pointer.y * 0.35;
+    orb.current.rotation.y = clock.elapsedTime * 0.24 * speed + pointer.x * 0.45;
+  });
+  return (
+    <Float speed={speed * 1.2} floatIntensity={0.65} rotationIntensity={0.2}>
+      <mesh ref={orb} scale={0.85 + intensity * 0.2}>
+        <icosahedronGeometry args={[1, 5]} />
+        <MeshDistortMaterial color="#68e8ef" emissive="#0b7985" emissiveIntensity={0.8} metalness={0.75} roughness={0.18} distort={0.18 * intensity} speed={speed * 2} />
+      </mesh>
     </Float>
   );
 }
@@ -160,9 +185,19 @@ function ReactiveAvatar({ externalLook }: { externalLook?: { x: number; y: numbe
 export function ReactiveScene({
   externalLook,
   className = "",
+  variant = "avatar",
+  speed = 1,
+  sensitivity = 1,
+  intensity = 1,
+  smoothing = 0.65,
 }: {
   externalLook?: { x: number; y: number } | null;
   className?: string;
+  variant?: SceneVariant;
+  speed?: number;
+  sensitivity?: number;
+  intensity?: number;
+  smoothing?: number;
 }) {
   return (
     <div className={className}>
@@ -172,12 +207,15 @@ export function ReactiveScene({
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance" }}
       >
         <Suspense fallback={null}>
-          <LiquidBackdrop />
+          <LiquidBackdrop speed={speed} intensity={intensity} smoothing={smoothing} />
           <ambientLight intensity={0.5} />
           <directionalLight position={[3, 4, 4]} color="#b5fbff" intensity={3.8} castShadow />
           <pointLight position={[-3, -1, 2]} color="#ff6b35" intensity={22} distance={8} />
-          <ParticleField />
-          <ReactiveAvatar externalLook={externalLook} />
+          {variant !== "liquid" && <ParticleField speed={speed} intensity={intensity} />}
+          {(variant === "avatar" || variant === "head") && (
+            <ReactiveAvatar externalLook={externalLook} speed={speed} sensitivity={sensitivity} smoothing={smoothing} headOnly={variant === "head"} />
+          )}
+          {(variant === "particles" || variant === "liquid") && <ReactiveOrb speed={speed} intensity={intensity} />}
         </Suspense>
       </Canvas>
     </div>
