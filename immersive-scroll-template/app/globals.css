@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Display Serif";
+  src: local("Times New Roman");
+  font-display: swap;
+}
+
+:root {
+  --background: #080808;
+  --foreground: #f2efe8;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  background: var(--background);
+  color: var(--foreground);
+  scroll-behavior: auto;
+}
+
+body {
+  margin: 0;
+  overflow-x: clip;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  text-rendering: geometricPrecision;
+}
+
+::selection { background: #d9ff57; color: #11110f; }
+.font-display { font-family: "Display Serif", Georgia, serif; }
+.scroll-cue-line { animation: scroll-cue 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+
+@keyframes scroll-cue {
+  0% { transform: translateY(-110%); }
+  55%, 100% { transform: translateY(220%); }
+}
+
+@media (max-width: 767px) {
+  .gallery-track { overflow: visible; }
+  .stacked-section { height: auto; overflow: visible; }
+  .stack-panel { position: relative; height: 100svh; clip-path: none !important; }
+  .cinematic-section { min-height: 100svh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
